@@ -1,0 +1,28 @@
+name: "Setup Anchor"
+description: "Setup Anchor"
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/cache@v2
+      name: Cache Anchor Tool Suite
+      id: cache-anchor
+      with:
+        path: |
+          ~/.avm
+          ~/.rustup/toolchains
+          ~/.cargo/.crates.toml
+          ~/.cargo/.crates2.json
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: anchor-${{ runner.os }}-v0000-${{ env.ANCHOR_VERSION }}
+    - uses: actions-rs/cargo@v1
+      name: Install AVM
+      with:
+        command: install
+        args: --git https://github.com/project-serum/anchor avm --locked --force
+    - run: avm install ${{ env.ANCHOR_VERSION }}
+      shell: bash
+    - run: avm use ${{ env.ANCHOR_VERSION }}
+      shell: bash

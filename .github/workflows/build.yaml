@@ -1,0 +1,99 @@
+name: build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: '*'
+
+env:
+  CARGO_TERM_COLOR: always
+  SOLANA_CLI_VERSION: 1.9.13
+  NODE_VERSION: 17.4.0
+  ANCHOR_VERSION: 0.24.2
+
+jobs:
+
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        name: Cache Cargo registry + index
+        id: cache-cargo-build
+        with:
+          path: |
+            ~/.rustup/toolchains
+            # If we only cache ~/.cargo, for some reason Cargo still downloads crates later,
+            # so instead we cache the individual subdirectories and files, which hopefully
+            # works. Some of the top-level files are needed to make "cargo install" work.
+            ~/.cargo/.crates.toml
+            ~/.cargo/.crates2.json
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: cargo-${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+      - name: Check Rust formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        name: Cache Cargo registry + index
+        id: cache-cargo-build
+        with:
+          path: |
+            ~/.rustup/toolchains
+            # If we only cache ~/.cargo, for some reason Cargo still downloads crates later,
+            # so instead we cache the individual subdirectories and files, which hopefully
+            # works. Some of the top-level files are needed to make "cargo install" work.
+            ~/.cargo/.crates.toml
+            ~/.cargo/.crates2.json
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: cargo-${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+      - name: Check Rust formatting
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-targets -- -D warnings
+      - run: rustup toolchain install nightly --profile minimal --component clippy
+      - run: cargo +nightly clippy --all-targets -- -D warnings
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/setup/
+    - uses: ./.github/actions/setup-solana/
+    - uses: ./.github/actions/setup-anchor/
+    - uses: ./.github/actions/setup-ts/
+    - uses: actions/cache@v2
+      name: Cache Cargo registry + index
+      id: cache-cargo-build
+      with:
+        path: |
+          ~/.rustup/toolchains
+          # If we only cache ~/.cargo, for some reason Cargo still downloads crates later,
+          # so instead we cache the individual subdirectories and files, which hopefully
+          # works. Some of the top-level files are needed to make "cargo install" work.
+          ~/.cargo/.crates.toml
+          ~/.cargo/.crates2.json
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: cargo-${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+    - run: anchor build --skip-lint -- --features mock-mint
+    - run: anchor test --skip-build --skip-lint --provider.cluster localnet -- --features mock-mint

@@ -1,0 +1,25 @@
+[package]
+name = "staking-cli"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anchor-lang = "0.24.2"
+staking = { path = "../programs/staking", features = ["no-entrypoint"], version = "0.1.0" }
+clap = { version = "3.1.2", features = ["derive"] }
+serde = { version = "1.0.136", features = ["derive"] }
+serde_json = "1.0.79"
+solana-account-decoder = "1.9.13"
+solana-clap-utils = "1.9.13"
+solana-cli-config = "1.9.13"
+solana-client = "1.9.13"
+solana-client-helpers = "=1.1.0"
+solana-remote-wallet = "1.9.13"
+solana-sdk = "1.9.13"
+thiserror = "1.0.30"
+
+[[bin]]
+name = "staking"
+path = "src/main.rs"
